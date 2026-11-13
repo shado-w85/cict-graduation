@@ -1,0 +1,10 @@
+# Virtual environment (machine specific, never upload)
+venv/
+__pycache__/
+*.pyc
+
+# The real attendee list must stay private. Upload only the site/ folder.
+data/attendees.csv
+
+# Test images
+test_qr/

@@ -1,0 +1,5 @@
+# Python packages for the CICT Graduation Check-in project.
+# Install with:  pip install -r requirements.txt
+# qrcode + Pillow are used only by scripts/make_sample_qr.py (testing).
+# Everything else in the project uses Python's built-in modules.
+qrcode[pil]==8.2

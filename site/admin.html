@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CICT Graduation – Admin Scanner</title>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="attendees.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; background:#0b1f4b; color:#fff; text-align:center; padding:20px 12px; }
+  h1 { color:#f5c542; font-size:22px; }
+  #reader { max-width:380px; margin:0 auto; background:#fff; border-radius:12px; overflow:hidden; }
+  #status { max-width:380px; margin:16px auto; padding:18px; border-radius:12px; font-size:18px; font-weight:bold; background:#334; }
+  .valid { background:#1e8449 !important; } .invalid { background:#c0392b !important; } .dup { background:#d68910 !important; }
+  .small { font-size:13px; font-weight:normal; margin-top:6px; }
+  button { background:#f5c542; border:0; padding:9px 16px; border-radius:8px; font-weight:bold; cursor:pointer; margin:4px; }
+</style>
+</head>
+<body>
+  <h1>🎓 Admin – Scan attendee QR</h1>
+  <div id="reader"></div>
+  <div id="status">Point the camera at a QR code</div>
+  <div>Checked in: <b id="count">0</b></div>
+  <button onclick="clearLog()">Reset check-in log</button>
+
+<script>
+const KEY = "cict_checked_in";
+let checked = JSON.parse(localStorage.getItem(KEY) || "[]");
+let lastText = "", lastTime = 0;
+document.getElementById("count").textContent = checked.length;
+
+async function sha256(text) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, "0")).join("");
+}
+const normalize = s => s.trim().toUpperCase().replace(/\s+/g, "");
+
+function show(cls, text, sub) {
+  const el = document.getElementById("status");
+  el.className = cls;
+  el.innerHTML = text + (sub ? '<div class="small">' + sub + "</div>" : "");
+}
+
+async function onScan(decoded) {
+  const now = Date.now();
+  if (decoded === lastText && now - lastTime < 3000) return; // ignore repeat reads
+  lastText = decoded; lastTime = now;
+
+  const reg = normalize(decoded);
+  const exists = ATTENDEE_HASHES.includes(await sha256(reg));
+  const safeReg = reg.replace(/[<>&]/g, "");
+
+  if (!exists) {
+    show("invalid", "❌ NOT ON THE LIST", safeReg);
+  } else if (checked.includes(reg)) {
+    show("dup", "⚠️ ALREADY CHECKED IN", safeReg);
+  } else {
+    checked.push(reg);
+    localStorage.setItem(KEY, JSON.stringify(checked));
+    document.getElementById("count").textContent = checked.length;
+    show("valid", "✅ VALID ATTENDEE", safeReg);
+  }
+}
+
+function clearLog() {
+  if (confirm("Clear all check-ins on this device?")) {
+    checked = []; localStorage.removeItem(KEY);
+    document.getElementById("count").textContent = 0;
+  }
+}
+
+new Html5QrcodeScanner("reader", { fps: 10, qrbox: 230 }, false).render(onScan, () => {});
+</script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CICT Graduation – Get your QR code</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="attendees.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; background:#0b1f4b; color:#fff; text-align:center; padding:30px 16px; }
+  h1 { color:#f5c542; }
+  .panel { background:#fff; color:#222; max-width:420px; margin:20px auto; padding:22px; border-radius:12px; }
+  input { width:90%; padding:11px; margin:8px 0 14px; border:1px solid #ccc; border-radius:8px; font-size:16px; }
+  button { background:#f5c542; border:0; padding:11px 22px; border-radius:8px; font-weight:bold; cursor:pointer; margin:4px; }
+  #msg { margin:10px 0; font-weight:bold; }
+  .err { color:#c0392b; } .ok { color:#1e8449; }
+  #qr { display:inline-block; background:#fff; padding:10px; margin-top:10px; }
+</style>
+</head>
+<body>
+  <h1>🎓 CICT Graduation</h1>
+  <div class="panel">
+    <p>Enter your registration number to get your entry QR code.</p>
+    <input id="reg" placeholder="Registration number" autocomplete="off">
+    <br><button onclick="make()">Generate my QR</button>
+    <div id="msg"></div>
+    <div id="result" style="display:none">
+      <div id="qr"></div><br>
+      <button onclick="download()">Download QR</button>
+      <p style="font-size:13px">Show this QR at the entrance.</p>
+    </div>
+  </div>
+
+<script>
+let currentReg = "";
+
+async function sha256(text) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, "0")).join("");
+}
+const normalize = s => s.trim().toUpperCase().replace(/\s+/g, "");
+
+async function make() {
+  const msg = document.getElementById("msg");
+  const result = document.getElementById("result");
+  const reg = normalize(document.getElementById("reg").value);
+  result.style.display = "none";
+  if (!reg) { msg.className = "err"; msg.textContent = "Please enter your registration number."; return; }
+
+  const hash = await sha256(reg);
+  if (!ATTENDEE_HASHES.includes(hash)) {
+    msg.className = "err";
+    msg.textContent = "Registration number not found on the attendee list.";
+    return;
+  }
+  msg.className = "ok";
+  msg.textContent = "Found! Here is your QR code.";
+  currentReg = reg;
+  const box = document.getElementById("qr");
+  box.innerHTML = "";
+  new QRCode(box, { text: reg, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
+  result.style.display = "block";
+}
+
+function download() {
+  const canvas = document.querySelector("#qr canvas");
+  const a = document.createElement("a");
+  a.href = canvas.toDataURL("image/png");
+  a.download = "graduation-qr-" + currentReg.replace(/[^A-Z0-9]/g, "_") + ".png";
+  a.click();
+}
+</script>
+</body>
+</html>
