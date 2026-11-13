@@ -42,7 +42,4 @@ python scripts/serve.py          # test at http://localhost:8000/index.html
 Upload only the contents of `site/` to GitHub Pages or Netlify. Never upload `data/`.
 See the full PDF guide for every step explained in detail.
 
-
-https://lively-tulumba-8b7173.netlify.app
-
-https://scintillating-meerkat-47c8a9.netlify.app
+https://shado-w85.github.io/cict-graduation/site/
